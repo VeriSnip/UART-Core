@@ -49,10 +49,10 @@ module myuart #(
       .rstn_i         (arst_i),
       .rx_i           (rx_i),
       .cfg_en_i       (1'b1),
-      .cfg_div_i      ({regs_q[DLM+'d8], regs_q[DLL+'d8]}),
-      .cfg_parity_en_i(regs_q[LCR][3]),
-      .cfg_bits_i     (regs_q[LCR][1:0]),
-      // .cfg_stop_bits_i    ( regs_q[LCR][2]                ),
+      .cfg_div_i      ({dlm_reg_q, dll_reg_q}),
+      .cfg_parity_en_i(lcr_reg_q[3]),
+      .cfg_bits_i     (lcr_reg_q[1:0]),
+      .cfg_stop_bits_i(lcr_reg_q[2]),
       .busy_o         (),
       .err_o          (parity_error),
       .err_clr_i      (1'b1),
@@ -67,10 +67,10 @@ module myuart #(
       .tx_o           (tx_o),
       .busy_o         (),
       .cfg_en_i       (1'b1),
-      .cfg_div_i      ({regs_q[DLM+'d8], regs_q[DLL+'d8]}),
-      .cfg_parity_en_i(regs_q[LCR][3]),
-      .cfg_bits_i     (regs_q[LCR][1:0]),
-      .cfg_stop_bits_i(regs_q[LCR][2]),
+      .cfg_div_i      ({dlm_reg_q, dll_reg_q}),
+      .cfg_parity_en_i(lcr_reg_q[3]),
+      .cfg_bits_i     (lcr_reg_q[1:0]),
+      .cfg_stop_bits_i(lcr_reg_q[2]),
 
       .tx_data_i (tx_data),
       .tx_valid_i(tx_valid),
@@ -126,7 +126,7 @@ module myuart #(
       .rstn_i(arst_i),
 
 
-      .IER_i(regs_q[IER][2:0]),  // interrupt enable register
+      .IER_i(ier_reg_q[2:0]),  // interrupt enable register
       .RDA_i(lsr_reg_n[5]),    // receiver data available
       .CTI_i(1'b0),              // character timeout indication
 
@@ -138,13 +138,17 @@ module myuart #(
 
       .clr_int_i(clr_int),  // one hot
 
-      .interrupt_o(event_o),
+      .interrupt_o(interrupt_o),
       .IIR_o      (IIR_o)
 
   );
 
   `include "myuart_mmio.vs"
   // UART Registers
+  // rx status, parity error on receiving part has occured, tx status register
+  assign lsr_reg_n = {
+    fifo_rx_valid, 1'b0, fifo_rx_data[8], 2'b00, ~(|tx_elements), (tx_ready)&(~(|tx_elements)), 1'b0
+    };
 
   // register write and update logic
   always @(*) begin
@@ -152,7 +156,6 @@ module myuart #(
       iir_reg_n = iir_reg_q;
       lcr_reg_n = lcr_reg_q;
       mcr_reg_n = mcr_reg_q;
-      lsr_reg_n = lsr_reg_q;
       msr_reg_n = msr_reg_q;
       scr_reg_n = scr_reg_q;
       dlm_reg_n = dlm_reg_q;
@@ -163,16 +166,6 @@ module myuart #(
       tx_fifo_clr_n   = 1'b0; // self clearing
       rx_fifo_clr_n   = 1'b0; // self clearing
 
-      // rx status
-      lsr_reg_n[0] = fifo_rx_valid; // fifo is empty
-
-      // parity error on receiving part has occured
-      lsr_reg_n[2] = fifo_rx_data[8]; // parity error is detected when element is retrieved
-
-      // tx status register
-      lsr_reg_n[5] = ~ (|tx_elements); // fifo is empty
-      lsr_reg_n[6] = tx_ready & ~ (|tx_elements); // shift register and fifo are empty
-
       if (wvalid_i) begin
           case (awaddr_i)
 
@@ -180,11 +173,11 @@ module myuart #(
               begin
                   if (lcr_reg_q[7]) // Divisor Latch Access Bit (DLAB)
                   begin
-                      dll_reg_n = PWDATA[7:0];
+                      dll_reg_n = wdata_i[7:0];
                   end
                   else
                   begin
-                      fifo_tx_data = PWDATA[7:0];
+                      fifo_tx_data = wdata_i[7:0];
                       fifo_tx_valid = 1'b1;
                   end
               end
@@ -192,19 +185,19 @@ module myuart #(
               IER: // either IER or DLM
               begin
                   if (lcr_reg_q[7]) // Divisor Latch Access Bit (DLAB)
-                      dlm_reg_n = PWDATA[7:0];
+                      dlm_reg_n = wdata_i[7:0];
                   else
-                      ier_reg_n = PWDATA[7:0];
+                      ier_reg_n = wdata_i[7:0];
               end
 
               LCR:
-                  lcr_reg_n = PWDATA[7:0];
+                  lcr_reg_n = wdata_i[7:0];
 
               FCR: // write only register, fifo control register
               begin
-                  rx_fifo_clr_n   = PWDATA[1];
-                  tx_fifo_clr_n   = PWDATA[2];
-                  trigger_level_n = PWDATA[7:6];
+                  rx_fifo_clr_n   = wdata_i[1];
+                  tx_fifo_clr_n   = wdata_i[2];
+                  trigger_level_n = wdata_i[7:6];
               end
 
               default: ;
@@ -217,7 +210,6 @@ module myuart #(
   // register read logic
   always @(*) begin
       rdata_o = 'b0;
-      apb_rx_ready = 1'b0;
       fifo_rx_ready = 1'b0;
       clr_int      = 4'b0;
 
