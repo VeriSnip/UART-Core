@@ -142,23 +142,24 @@ module uart_rx (
     endcase
   end
 
-  `include "reg_parity_bit.vs" // en rst_val=1'b0 data_q=parity_bit data_d=parity_bit_next data_e=bit_done
-  `include "reg_data.vs"  // en rst_val=8'hFF data_q=reg_data data_d=reg_data_next data_e=sampleData
-  `include "reg_bit_count.vs"  // rst_val=0 data_q=reg_bit_count data_d=reg_bit_count_next
-  `include "reg_CS.vs"  // rst rst_val=IDLE data_q=CS data_d=NS data_r=~cfg_en_i
+//`include "reg_{Reg_name}.vs" // Size, Reset Value, Reg_reset, Reg_enable, Reg_next"
+  `include "reg_parity_bit.vs" // 1, 1'b0, , bit_done, _next
+  `include "reg_data.vs"  // 8, 8'hFF, , sampleData, _next
+  `include "reg_bit_count.vs"  // 3, 0, , , _next
+  `include "reg_CS.vs"  // 3, IDLE, ~cfg_en_i, , SNS
 
   assign s_rx_fall = ~reg_rx_sync[1] & reg_rx_sync[2];
-  `include "reg_rx_sync.vs" // rst rst_val=3'b111 data_q=reg_rx_sync data_d={reg_rx_sync[1:0],rx_i} data_r=~cfg_en_i
+  `include "reg_rx_sync.vs" // 3, 3'b111, ~cfg_en_i, , {reg_rx_sync[1:0],rx_i}
 
   assign not_started = (~start_bit & (baud_cnt == cfg_div_i));
   assign end_receiving = (start_bit & (baud_cnt == {1'b0, cfg_div_i[15:1]}));
   assign not_in_transmission = not_started | end_receiving;
   assign bit_done_r = baudgen_en & (~not_in_transmission);
   assign baud_cnt_r = baudgen_en & (not_in_transmission);
-  `include "reg_bit_done.vs"  // rst rst_val=0 data_q=bit_done data_d=1'b1
-  `include "reg_baud_cnt.vs"  // rst rst_val=0 data_q=baud_cnt data_d=baud_cnt+1
+  `include "reg_bit_done.vs"  // 1, 0, _r, , 1'b1
+  `include "reg_baud_cnt.vs"  // 16, 0, _r, , baud_cnt+1
 
-  `include "reg_err.vs" // en rst rst_val=0 data_q=err_o data_e=set_error data_d=1'b1 data_r=err_clr_i
+  `include "reg_err_o.vs" // 1, 0, err_clr_i, set_error, 1'b1
 
   assign rx_data_o = reg_data;
 
