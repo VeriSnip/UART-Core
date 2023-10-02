@@ -1,4 +1,4 @@
-  `include "myuart_generated_wires.vs"
+  `include "generated_wires_myuart.vs"
 
   wire [2:0]       register_adr;
   wire [9:0][7:0]  regs_q, regs_n;

@@ -143,7 +143,7 @@ module myuart #(
 
   );
 
-  `include "myuart_mmio.vs"
+  `include "mmio_myuart.vs"
   // UART Registers
   // rx status, parity error on receiving part has occured, tx status register
   assign lsr_reg_n = {
