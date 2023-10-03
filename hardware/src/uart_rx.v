@@ -143,10 +143,12 @@ module uart_rx (
   end
 
 //`include "reg_{Reg_name}.vs" // Size, Reset Value, Reg_reset, Reg_enable, Reg_next"
-  `include "reg_parity_bit.vs" // 1, 1'b0, , bit_done, _next
-  `include "reg_data.vs"  // 8, 8'hFF, , sampleData, _next
-  `include "reg_bit_count.vs"  // 3, 0, , , _next
-  `include "reg_CS.vs"  // 3, IDLE, ~cfg_en_i, , SNS
+  `include "reg_list.vs" /*
+    parity_bit, 1, 1'b0, , bit_done, _next
+    reg_data, 8, 8'hFF, , sampleData, _next
+    bit_count, 3, 0, , , _next
+    CS, 3, IDLE, ~cfg_en_i, , SNS
+  */
 
   assign s_rx_fall = ~reg_rx_sync[1] & reg_rx_sync[2];
   `include "reg_rx_sync.vs" // 3, 3'b111, ~cfg_en_i, , {reg_rx_sync[1:0],rx_i}
