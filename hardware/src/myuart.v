@@ -43,6 +43,45 @@ module myuart #(
 
   `include "myuart_wires.vs"
 
+  assign trigger_level = ffc_reg_q[7:6];
+  assign tx_fifo_clr   = ffc_reg_q[2];
+  assign rx_fifo_clr   = ffc_reg_q[1];
+  assign fifo_rx_ready = rbr_reg_sel & read_enable;
+  assign fifo_tx_valid = thr_reg_sel & write_enable;
+
+  `include "mmio_myuart.vs"  /*
+  rbr_reg_q, 8, 8'h00, , ~lcr_reg_q[7], fifo_rx_data, RBR, R,
+  thr_reg_q, 8, 8'h00, , ~lcr_reg_q[7], fifo_tx_data, THR, W,
+  ier_reg_q, 8, 8'h00, , ~lcr_reg_q[7], _n, IER, R/W,
+  iir_reg_q, 8, 8'h01, , , _n, IIR, R, {4'h0, IIR_o}
+  ffc_reg_q, 8, 8'h00, , , _n, FCR, W, {trigger_level, 6'h00}
+  lcr_reg_q, 8, 8'h00, , , _n, LCR, R/W,
+  mcr_reg_q, 8, 8'h00, , , _n, MCR, W,
+  lsr_reg_q, 8, 8'h60, , , _n, LSR, R, {fifo_rx_valid, 1'b0, fifo_rx_data[8], 2'b00, ~(|tx_elements), (tx_ready) & (~(|tx_elements)), 1'b0}
+  msr_reg_q, 8, 8'h00, , , _n, MSR, R,
+  scr_reg_q, 8, 8'h00, , , _n, SCR, R/W,
+  dlm_reg_q, 8, 8'h00, , lcr_reg_q[7], _n, DLM, R/W,
+  dll_reg_q, 8, 8'h00, , lcr_reg_q[7], _n, DLL, R/W,
+  */
+
+  always @(*) begin
+    clr_int = 4'b0;
+    if (rbr_reg_sel) begin
+      clr_int = 4'b1000;  // clear Received Data Available interrupt
+    end
+    if (lsr_reg_sel) begin
+      clr_int = 4'b1100;  // clear parrity interrupt error
+    end
+    if (iir_reg_sel) begin
+      clr_int = 4'b0100;  // clear Transmitter Holding Register Empty
+    end
+  end
+
+
+  assign arready_o = 1'b1;
+  assign awready_o = 1'b1;
+  assign wready_o  = 1'b1;
+
   // TODO: check that stop bits are really not necessary here
   uart_rx uart_rx_i (
       .clk_i          (clk_i),
@@ -84,7 +123,7 @@ module myuart #(
       .clk_i (clk_i),
       .rstn_i(arst_i),
 
-      .clr_i(rx_fifo_clr_q),
+      .clr_i(rx_fifo_clr),
 
       .elements_o(rx_elements),
 
@@ -104,7 +143,7 @@ module myuart #(
       .clk_i (clk_i),
       .rstn_i(arst_i),
 
-      .clr_i(tx_fifo_clr_q),
+      .clr_i(tx_fifo_clr),
 
       .elements_o(tx_elements),
 
@@ -134,7 +173,7 @@ module myuart #(
       .error_i        (lsr_reg_n[2]),
       .rx_elements_i  (rx_elements),
       .tx_elements_i  (tx_elements),
-      .trigger_level_i(trigger_level_q),
+      .trigger_level_i(trigger_level),
 
       .clr_int_i(clr_int),  // one hot
 
@@ -142,157 +181,5 @@ module myuart #(
       .IIR_o      (IIR_o)
 
   );
-
-  `include "mmio_myuart.vs"
-  // UART Registers
-  // rx status, parity error on receiving part has occured, tx status register
-  assign lsr_reg_n = {
-    fifo_rx_valid,
-    1'b0,
-    fifo_rx_data[8],
-    2'b00,
-    ~(|tx_elements),
-    (tx_ready) & (~(|tx_elements)),
-    1'b0
-  };
-
-  // register write and update logic
-  always @(*) begin
-    ier_reg_n = ier_reg_q;
-    iir_reg_n = iir_reg_q;
-    lcr_reg_n = lcr_reg_q;
-    mcr_reg_n = mcr_reg_q;
-    msr_reg_n = msr_reg_q;
-    scr_reg_n = scr_reg_q;
-    dlm_reg_n = dlm_reg_q;
-    dll_reg_n = dll_reg_q;
-    trigger_level_n = trigger_level_q;
-
-    fifo_tx_valid = 1'b0;
-    tx_fifo_clr_n = 1'b0;  // self clearing
-    rx_fifo_clr_n = 1'b0;  // self clearing
-
-    if (wvalid_i) begin
-      case (awaddr_i)
-
-        THR: // either THR or DLL
-              begin
-          if (lcr_reg_q[7]) // Divisor Latch Access Bit (DLAB)
-                  begin
-            dll_reg_n = wdata_i[7:0];
-          end else begin
-            fifo_tx_data  = wdata_i[7:0];
-            fifo_tx_valid = 1'b1;
-          end
-        end
-
-        IER: // either IER or DLM
-              begin
-          if (lcr_reg_q[7])  // Divisor Latch Access Bit (DLAB)
-            dlm_reg_n = wdata_i[7:0];
-          else ier_reg_n = wdata_i[7:0];
-        end
-
-        LCR: lcr_reg_n = wdata_i[7:0];
-
-        FCR: // write only register, fifo control register
-              begin
-          rx_fifo_clr_n   = wdata_i[1];
-          tx_fifo_clr_n   = wdata_i[2];
-          trigger_level_n = wdata_i[7:6];
-        end
-
-        default: ;
-      endcase
-
-    end
-
-  end
-
-  // register read logic
-  always @(*) begin
-    rdata_o       = 'b0;
-    fifo_rx_ready = 1'b0;
-    clr_int       = 4'b0;
-
-    if (awread) begin
-      case (araddr_i)
-        RBR: // either RBR or DLL
-              begin
-          if (lcr_reg_q[7])  // Divisor Latch Access Bit (DLAB)
-            rdata_o = {24'b0, dll_reg_q};
-          else begin
-
-            fifo_rx_ready = 1'b1;
-
-            rdata_o = {24'b0, fifo_rx_data[7:0]};
-
-            clr_int = 4'b1000;  // clear Received Data Available interrupt
-          end
-        end
-
-        LSR: // Line Status Register
-              begin
-          rdata_o = {24'b0, lsr_reg_q};
-          clr_int = 4'b1100;  // clear parrity interrupt error
-        end
-
-        LCR:  // Line Control Register
-        rdata_o = {24'b0, lcr_reg_q};
-
-        IER: // either IER or DLM
-              begin
-          if (lcr_reg_q[7])  // Divisor Latch Access Bit (DLAB)
-            rdata_o = {24'b0, dlm_reg_q};
-          else rdata_o = {24'b0, ier_reg_q};
-        end
-
-        IIR: // interrupt identification register read only
-              begin
-          rdata_o = {24'b0, 1'b1, 1'b1, 2'b0, IIR_o};
-          clr_int = 4'b0100;  // clear Transmitter Holding Register Empty
-        end
-
-        default: ;
-      endcase
-    end
-  end
-
-  // synchronouse part
-  always @(posedge clk_i, posedge arst_i) begin
-    if (arst_i) begin
-      ier_reg_q <= 8'h00;
-      iir_reg_q <= 8'h01;
-      lcr_reg_q <= 8'h00;
-      mcr_reg_q <= 8'h00;
-      lsr_reg_q <= 8'h60;
-      msr_reg_q <= 8'h00;
-      scr_reg_q <= 8'h00;
-      dlm_reg_q <= 8'h00;
-      dll_reg_q <= 8'h00;
-
-      trigger_level_q <= 2'b00;
-      tx_fifo_clr_q <= 1'b0;
-      rx_fifo_clr_q <= 1'b0;
-    end else begin
-      ier_reg_q <= ier_reg_n;
-      iir_reg_q <= iir_reg_n;
-      lcr_reg_q <= lcr_reg_n;
-      mcr_reg_q <= mcr_reg_n;
-      lsr_reg_q <= lsr_reg_n;
-      msr_reg_q <= msr_reg_n;
-      scr_reg_q <= scr_reg_n;
-      dlm_reg_q <= dlm_reg_n;
-      dll_reg_q <= dll_reg_n;
-
-      trigger_level_q <= trigger_level_n;
-      tx_fifo_clr_q <= tx_fifo_clr_n;
-      rx_fifo_clr_q <= rx_fifo_clr_n;
-    end
-  end
-
-  assign arready_o = 1'b1;
-  assign awready_o = 1'b1;
-  assign wready_o  = 1'b1;
 
 endmodule

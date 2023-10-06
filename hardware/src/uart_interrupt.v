@@ -61,16 +61,7 @@ module uart_interrupt #(
     else if (IER_i[1] & tx_elements_i == 0) iir_n = 4'b0100;
   end
 
-
-  always @(posedge clk_i, posedge arst_i) begin
-    if (arst_i) begin
-      iir_q <= 4'b0001;
-    end else begin
-      iir_q <= iir_n;
-    end
-  end
-
-  assign IIR_o = iir_q;
+  assign IIR_o = iir_n;
   assign interrupt_o = ~iir_q[0];
 
 endmodule

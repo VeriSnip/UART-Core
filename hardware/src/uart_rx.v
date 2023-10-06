@@ -143,7 +143,7 @@ module uart_rx (
   end
 
 //`include "reg_{Reg_name}.vs" // Size, Reset Value, Reg_reset, Reg_enable, Reg_next"
-  `include "reg_list.vs" /*
+  `include "reg_uart_rx.vs" /*
     parity_bit, 1, 1'b0, , bit_done, _next
     reg_data, 8, 8'hFF, , sampleData, _next
     bit_count, 3, 0, , , _next

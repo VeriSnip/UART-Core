@@ -2,7 +2,7 @@
 
   wire [2:0]       register_adr;
   wire [9:0][7:0]  regs_q, regs_n;
-  wire [1:0]       trigger_level_n, trigger_level_q;
+  wire [1:0]       trigger_level;
 
   // receive buffer register, read only
   wire [7:0]       rx_data;
@@ -18,8 +18,8 @@
   wire apb_rx_ready;
   wire rx_valid;
 
-  wire tx_fifo_clr_n, tx_fifo_clr_q;
-  wire rx_fifo_clr_n, rx_fifo_clr_q;
+  wire tx_fifo_clr;
+  wire rx_fifo_clr;
 
   wire fifo_tx_valid;
   wire tx_valid;
