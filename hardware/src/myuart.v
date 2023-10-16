@@ -41,7 +41,39 @@ module myuart #(
   localparam integer RBR = 3'h0, THR = 3'h0, DLL = 3'h0, IER = 3'h1, DLM = 3'h1, IIR = 3'h2,
                      FCR = 3'h2, LCR = 3'h3, MCR = 3'h4, LSR = 3'h5, MSR = 3'h6, SCR = 3'h7;
 
-  `include "myuart_wires.vs"
+  `include "generated_wires_myuart.vs"
+
+  wire [2:0]       register_adr;
+  wire [1:0]       trigger_level;
+
+  // receive buffer register, read only
+  wire [7:0]       rx_data;
+  // parity error
+  wire             parity_error;
+  wire [3:0]       IIR_o;
+  wire [3:0]       clr_int;
+
+  // tx flow control
+  wire tx_ready;
+
+  // rx flow control
+  wire apb_rx_ready;
+  wire rx_valid;
+
+
+  wire fifo_tx_valid;
+  wire tx_valid;
+  wire tx_fifo_clr;
+  wire [8:0] fifo_rx_data;
+  wire fifo_rx_valid;
+  wire fifo_rx_ready;
+  wire rx_ready;
+  wire rx_fifo_clr;
+
+  wire [7:0] tx_data;
+  wire [$clog2(TX_FIFO_DEPTH):0] tx_elements;
+  wire [$clog2(RX_FIFO_DEPTH):0] rx_elements;
+
 
   assign trigger_level = ffc_reg_q[7:6];
   assign tx_fifo_clr   = ffc_reg_q[2];
@@ -50,7 +82,7 @@ module myuart #(
   assign fifo_tx_valid = thr_reg_sel & write_enable;
 
   `include "mmio_myuart.vs"  /*
-  rbr_reg_q, 8, 8'h00, , ~lcr_reg_q[7], fifo_rx_data, RBR, R,
+  rbr_reg_q, 8, 8'h00, , ~lcr_reg_q[7], _n, RBR, R, fifo_rx_data[7:0]
   thr_reg_q, 8, 8'h00, , ~lcr_reg_q[7], fifo_tx_data, THR, W,
   ier_reg_q, 8, 8'h00, , ~lcr_reg_q[7], _n, IER, R/W,
   iir_reg_q, 8, 8'h01, , , _n, IIR, R, {4'h0, IIR_o}
