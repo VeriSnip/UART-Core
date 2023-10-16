@@ -6,6 +6,8 @@
   //iterator
   integer i, fd;
 
+  `include "generated_wires_myuart_tb.vs"
+
   wire                rcv_awvalid;
   wire                rcv_awready;
   wire [  ADDR_W-1:0] rcv_awaddr;
