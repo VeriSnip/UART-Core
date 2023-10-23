@@ -12,7 +12,61 @@ module myuart_tb;
   parameter integer DATA_W = 32;
 
 
-  `include "myuart_tb_wires.vs"
+  // CORE SIGNALS
+  reg  rst;
+  reg  clk;
+  wire cke;
+
+  //iterator
+  integer i, fd;
+
+  `include "generated_wires_myuart_tb.vs"
+
+  wire                rcv_awvalid;
+  wire                rcv_awready;
+  wire [  ADDR_W-1:0] rcv_awaddr;
+  wire [         2:0] rcv_awprot;
+  wire                rcv_wvalid;
+  wire                rcv_wready;
+  wire [  DATA_W-1:0] rcv_wdata;
+  wire [DATA_W/8-1:0] rcv_wstrb;
+  wire                rcv_bvalid;
+  wire                rcv_bready;
+  wire [         1:0] rcv_bresp;
+  wire                rcv_arvalid;
+  wire                rcv_arready;
+  wire [  ADDR_W-1:0] rcv_araddr;
+  wire [         2:0] rcv_arprot;
+  wire                rcv_rvalid;
+  wire                rcv_rready;
+  wire [  DATA_W-1:0] rcv_rdata;
+  wire [         1:0] rcv_rresp;
+  wire                rcv_rx;
+  wire                rcv_tx;
+  wire                rcv_interrupt;
+
+  wire                snd_awvalid;
+  wire                snd_awready;
+  wire [  ADDR_W-1:0] snd_awaddr;
+  wire [         2:0] snd_awprot;
+  wire                snd_wvalid;
+  wire                snd_wready;
+  wire [  DATA_W-1:0] snd_wdata;
+  wire [DATA_W/8-1:0] snd_wstrb;
+  wire                snd_bvalid;
+  wire                snd_bready;
+  wire [         1:0] snd_bresp;
+  wire                snd_arvalid;
+  wire                snd_arready;
+  wire [  ADDR_W-1:0] snd_araddr;
+  wire [         2:0] snd_arprot;
+  wire                snd_rvalid;
+  wire                snd_rready;
+  wire [  DATA_W-1:0] snd_rdata;
+  wire [         1:0] snd_rresp;
+  wire                snd_rx;
+  wire                snd_tx;
+  wire                snd_interrupt;
 
 
   //system clock
@@ -31,72 +85,14 @@ module myuart_tb;
 
     clk      = 1;
     rst      = 1;
-    rst_soft = 0;
-
-    rd_en    = 0;
-    wr_en    = 0;
-
-    tx_en    = 0;
-    rx_en    = 0;
-
-    div      = clk_frequency / baud_rate;
 
     // deassert hard reset
     #100 @(posedge clk) #1 rst = 0;
     #100 @(posedge clk);
 
-    // assert tx not ready
-    if (tx_ready) begin
-        $display("ERROR: TX is ready initially");
-        $finish();
-    end
-
-    // assert rx not ready
-    if (rx_ready) begin
-        $display("ERROR: RX is ready initially");
-        $finish();
-    end
-
-    //pulse soft reset
-    #1 rst_soft = 1;
-    @(posedge clk) #1 rst_soft = 0;
-
-
-    //enable rx
-    @(posedge clk) #1 rx_en = 1;
-
-    //enable tx
-    #20000;
-    @(posedge clk) #1 tx_en = 1;
-
 
     // write data to send
     for (i = 0; i < 256; i = i + 1) begin
-      //wait for tx ready 
-      do @(posedge clk); while (!tx_ready);
-
-      //write word to send
-      @(posedge clk) #1 wr_en = 1;
-      tx_data = i;
-      @(posedge clk) #1 wr_en = 0;
-
-      //wait for core to receive datarx ready 
-      do @(posedge clk); while (!rx_ready);
-
-      //read received word
-      @(posedge clk) #1 rd_en = 1;
-      rcvd_data = rx_data;
-      @(posedge clk) #1 rd_en = 0;
-
-
-      // check received data
-      if (rcvd_data != i) begin
-        $display("Test failed: got %x, expected %x", rcvd_data, i);
-        fd = $fopen("test.log", "w");
-        $fdisplay(fd, "Test failed: got %x, expected %x", rcvd_data, i);
-        $fclose(fd);
-        $finish();
-      end
 
       @(posedge clk);
       @(posedge clk);
@@ -111,7 +107,7 @@ module myuart_tb;
     $finish();
   end
 
-  `include "instantiate_myuart_rcv.vs" // clk_i=clk arst_i=arst cke_i=cke
-  `include "instantiate_myuart_snd.vs" // clk_i=clk arst_i=arst cke_i=cke
+  `include "instantiate_myuart_rcv.vs" // clk_i=clk arst_i=rst cke_i=cke
+  `include "instantiate_myuart_snd.vs" // clk_i=clk arst_i=rst cke_i=cke
 
 endmodule

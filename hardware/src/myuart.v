@@ -51,7 +51,7 @@ module myuart #(
   // parity error
   wire             parity_error;
   wire [3:0]       IIR_o;
-  wire [3:0]       clr_int;
+  reg  [3:0]       clr_int;
 
   // tx flow control
   wire tx_ready;
@@ -117,13 +117,13 @@ module myuart #(
   // TODO: check that stop bits are really not necessary here
   uart_rx uart_rx_i (
       .clk_i          (clk_i),
-      .rstn_i         (arst_i),
+      .rstn_i         (~arst_i),
       .rx_i           (rx_i),
       .cfg_en_i       (1'b1),
       .cfg_div_i      ({dlm_reg_q, dll_reg_q}),
       .cfg_parity_en_i(lcr_reg_q[3]),
       .cfg_bits_i     (lcr_reg_q[1:0]),
-      .cfg_stop_bits_i(lcr_reg_q[2]),
+      //.cfg_stop_bits_i(lcr_reg_q[2]),
       .busy_o         (),
       .err_o          (parity_error),
       .err_clr_i      (1'b1),
@@ -134,7 +134,7 @@ module myuart #(
 
   uart_tx uart_tx_i (
       .clk_i          (clk_i),
-      .rstn_i         (arst_i),
+      .rstn_i         (~arst_i),
       .tx_o           (tx_o),
       .busy_o         (),
       .cfg_en_i       (1'b1),
@@ -153,7 +153,7 @@ module myuart #(
       .BUFFER_DEPTH(RX_FIFO_DEPTH)
   ) uart_rx_fifo_i (
       .clk_i (clk_i),
-      .rstn_i(arst_i),
+      .rstn_i(~arst_i),
 
       .clr_i(rx_fifo_clr),
 
@@ -173,7 +173,7 @@ module myuart #(
       .BUFFER_DEPTH(TX_FIFO_DEPTH)
   ) uart_tx_fifo_i (
       .clk_i (clk_i),
-      .rstn_i(arst_i),
+      .rstn_i(~arst_i),
 
       .clr_i(tx_fifo_clr),
 
@@ -194,7 +194,7 @@ module myuart #(
       .RX_FIFO_DEPTH(RX_FIFO_DEPTH)
   ) uart_interrupt_i (
       .clk_i (clk_i),
-      .rstn_i(arst_i),
+      .rstn_i(~arst_i),
 
 
       .IER_i(ier_reg_q[2:0]),  // interrupt enable register

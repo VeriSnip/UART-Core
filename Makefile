@@ -1,10 +1,9 @@
-
 VTbuild_DIR ?= $(PWD)/../MyVT-Tool
 MyUtils_DIR ?= $(PWD)/../MyUtils-Tool
 
 PROJECT_NAME ?= myuart
 
-include $(MyUtils_DIR)/utils.mk
+.PHONY: build help clean-all
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -16,5 +15,4 @@ build: clean-all
 clean-all:
 	python $(VTbuild_DIR)/VTbuild.py --clean all
 
-
-.PHONY: build help clean-all
+include $(MyUtils_DIR)/utils.mk
