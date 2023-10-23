@@ -2,3 +2,8 @@
 *__pycache__
 build
 hardware/generated
+
+# Ignored files
+*.log
+*.out
+*.json
