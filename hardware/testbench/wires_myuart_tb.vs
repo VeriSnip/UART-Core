@@ -1,0 +1,47 @@
+  reg  rcv_AXIL_awvalid;
+  wire rcv_AXIL_awready;
+  reg  [ADDR_WIDTH-1:0] rcv_AXIL_awaddr;
+  wire [2:0] rcv_AXIL_awprot;
+  reg  rcv_AXIL_wvalid;
+  wire rcv_AXIL_wready;
+  reg  [DATA_WIDTH-1:0] rcv_AXIL_wdata;
+  reg  [DATA_WIDTH/8-1:0] rcv_AXIL_wstrb;
+  wire rcv_AXIL_bvalid;
+  reg  rcv_AXIL_bready;
+  wire [1:0] rcv_AXIL_bresp;
+  reg  rcv_AXIL_arvalid;
+  wire rcv_AXIL_arready;
+  reg  [ADDR_WIDTH-1:0] rcv_AXIL_araddr;
+  wire [2:0] rcv_AXIL_arprot;
+  wire rcv_AXIL_rvalid;
+  reg  rcv_AXIL_rready;
+  wire [DATA_WIDTH-1:0] rcv_AXIL_rdata;
+  wire [1:0] rcv_AXIL_rresp;
+  wire rcv_rx;
+  wire rcv_tx;
+  wire rcv_interrupt;
+
+  reg  snd_AXIL_awvalid;
+  wire snd_AXIL_awready;
+  reg  [ADDR_WIDTH-1:0] snd_AXIL_awaddr;
+  wire [2:0] snd_AXIL_awprot;
+  reg  snd_AXIL_wvalid;
+  wire snd_AXIL_wready;
+  reg  [DATA_WIDTH-1:0] snd_AXIL_wdata;
+  reg  [DATA_WIDTH/8-1:0] snd_AXIL_wstrb;
+  wire snd_AXIL_bvalid;
+  reg  snd_AXIL_bready;
+  wire [1:0] snd_AXIL_bresp;
+  reg  snd_AXIL_arvalid;
+  wire snd_AXIL_arready;
+  reg  [ADDR_WIDTH-1:0] snd_AXIL_araddr;
+  wire [2:0] snd_AXIL_arprot;
+  wire snd_AXIL_rvalid;
+  reg  snd_AXIL_rready;
+  wire [DATA_WIDTH-1:0] snd_AXIL_rdata;
+  wire [1:0] snd_AXIL_rresp;
+  wire snd_rx;
+  wire snd_tx;
+  wire snd_interrupt;
+
+  // Automatically generated "wire" and "reg" for myuart_tb
