@@ -8,8 +8,8 @@ module myuart_tb;
   parameter integer CLKfrequency = 100e6;  //100 MHz
   parameter integer BaudRate = 1e6;  //high value to speed sim
   parameter integer CLKper = 1e9 / CLKfrequency;
-  parameter integer ADDR_W = 16;
-  parameter integer DATA_W = 32;
+  parameter integer ADDR_WIDTH = 16;
+  parameter integer DATA_WIDTH = 32;
 
 
   // CORE SIGNALS

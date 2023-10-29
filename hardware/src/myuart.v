@@ -4,36 +4,16 @@ UART module
 `include "timescale.vs"
 
 module myuart #(
-    parameter integer ADDR_W = 16,
-    parameter integer DATA_W = 32,
+    parameter integer ADDR_WIDTH = 16,
+    parameter integer DATA_WIDTH = 32,
     parameter integer TX_FIFO_DEPTH = 16,  // in bytes
     parameter integer RX_FIFO_DEPTH = 16  // in bytes
 ) (
-    `include "io_clk_en_rst.vs"
-
-    input  wire                awvalid_i,
-    output wire                awready_o,
-    input  wire [  ADDR_W-1:0] awaddr_i,
-    input  wire [         2:0] awprot_i,
-    input  wire                wvalid_i,
-    output wire                wready_o,
-    input  wire [  DATA_W-1:0] wdata_i,
-    input  wire [DATA_W/8-1:0] wstrb_i,
-    output wire                bvalid_o,
-    input  wire                bready_i,
-    output wire [         1:0] bresp_o,
-    input  wire                arvalid_o,
-    output wire                arready_o,
-    input  wire [  ADDR_W-1:0] araddr_i,
-    input  wire [         2:0] arprot_i,
-    output wire                rvalid_o,
-    input  wire                rready_o,
-    output wire [  DATA_W-1:0] rdata_o,
-    output wire [         1:0] rresp_o,
+    `include "io_clk_en_rst.vs",
+    `include "axil_interface_slave_io.vs",
 
     input  wire rx_i,  // Receiver input
     output wire tx_o,  // Transmitter output
-
     output wire interrupt_o  // interrupt/event output
 );
 
@@ -78,8 +58,21 @@ module myuart #(
   assign trigger_level = ffc_reg_q[7:6];
   assign tx_fifo_clr   = ffc_reg_q[2];
   assign rx_fifo_clr   = ffc_reg_q[1];
-  assign fifo_rx_ready = rbr_reg_sel & read_enable;
-  assign fifo_tx_valid = thr_reg_sel & write_enable;
+  assign fifo_rx_ready = r_rbr_reg_sel & r_enable;
+  assign fifo_tx_valid = w_thr_reg_sel & w_enable;
+
+  always @(*) begin
+    clr_int = 4'b0;
+    if (r_rbr_reg_sel) begin
+      clr_int = 4'b1000;  // clear Received Data Available interrupt
+    end
+    if (r_lsr_reg_sel) begin
+      clr_int = 4'b1100;  // clear parrity interrupt error
+    end
+    if (r_iir_reg_sel) begin
+      clr_int = 4'b0100;  // clear Transmitter Holding Register Empty
+    end
+  end
 
   `include "mmio_myuart.vs"  /*
   rbr_reg_q, 8, 8'h00, , ~lcr_reg_q[7], _n, RBR, R, fifo_rx_data[7:0]
@@ -96,23 +89,7 @@ module myuart #(
   dll_reg_q, 8, 8'h00, , lcr_reg_q[7], _n, DLL, R/W,
   */
 
-  always @(*) begin
-    clr_int = 4'b0;
-    if (rbr_reg_sel) begin
-      clr_int = 4'b1000;  // clear Received Data Available interrupt
-    end
-    if (lsr_reg_sel) begin
-      clr_int = 4'b1100;  // clear parrity interrupt error
-    end
-    if (iir_reg_sel) begin
-      clr_int = 4'b0100;  // clear Transmitter Holding Register Empty
-    end
-  end
-
-
-  assign arready_o = 1'b1;
-  assign awready_o = 1'b1;
-  assign wready_o  = 1'b1;
+  `include "axil_interface_slave_logic.vs"
 
   // TODO: check that stop bits are really not necessary here
   uart_rx uart_rx_i (
