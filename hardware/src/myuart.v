@@ -82,7 +82,7 @@ module myuart #(
   ffc_reg_q, 8, 8'h00, , , _n, FCR, W, {trigger_level, 6'h00}
   lcr_reg_q, 8, 8'h00, , , _n, LCR, R/W,
   mcr_reg_q, 8, 8'h00, , , _n, MCR, W,
-  lsr_reg_q, 8, 8'h60, , , _n, LSR, R, {fifo_rx_valid, 1'b0, fifo_rx_data[8], 2'b00, ~(|tx_elements), (tx_ready) & (~(|tx_elements)), 1'b0}
+  lsr_reg_q, 8, 8'h60, , , _n, LSR, R, {1'b0, tx_ready & ~(|tx_elements), ~(|tx_elements), 2'b00, fifo_rx_data[8], 1'b0, fifo_rx_valid}
   msr_reg_q, 8, 8'h00, , , _n, MSR, R,
   scr_reg_q, 8, 8'h00, , , _n, SCR, R/W,
   dlm_reg_q, 8, 8'h00, , lcr_reg_q[7], _n, DLM, R/W,
