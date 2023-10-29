@@ -36,12 +36,6 @@ module myuart_tb;
   end
 `endif
 
-  initial begin
-    clk = 0;
-    #5000000 $display("BOOM!");
-    $finish();
-  end
-
   // Reset sequence
   integer i;
   initial begin
@@ -54,41 +48,25 @@ module myuart_tb;
   // Send data
   reg [7:0] snd_lcr = 0;
   reg [7:0] snd_lsr = 0;
-  reg [7:0] snd_counter = 0;
+  reg [8:0] snd_counter = 0;
   initial begin
     @(reset_done);
     // initialize sender UART
-    snd_AXIL_araddr = 'd3;
-    read_axil(snd_AXIL_arvalid, snd_AXIL_arready, snd_AXIL_rvalid, snd_AXIL_rready);
-    snd_lcr = snd_AXIL_rdata[7:0];
-    snd_AXIL_awaddr = 'd3;
-    snd_AXIL_wdata = {{DATA_WIDTH - 8{1'b0}}, (snd_lcr | 8'h80)};
-    write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
-    snd_AXIL_awaddr = 'd1;
-    snd_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, div[15:8]};
-    write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
-    snd_AXIL_awaddr = 'd0;
-    snd_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, div[7:0]};
-    write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
-    snd_AXIL_awaddr = 'd3;
-    snd_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, (snd_lcr & 8'h7f)};
-    write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
-    snd_AXIL_awaddr = 'd2;
-    snd_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, 8'hc0};
-    write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
-    snd_AXIL_awaddr = 'd1;
-    snd_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, 8'h03};
-    write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
+    read_snd('d3, snd_lcr);
+    write_snd('d3, (snd_lcr | 8'h80));
+    write_snd('d1, div[15:8]);
+    write_snd('d0, div[7:0]);
+    write_snd('d3, (snd_lcr & 8'h7f));
+    write_snd('d2, 8'hc0);
+    write_snd('d1, 8'h03);
 
     // send all possible bytes
-    for (snd_counter = 0; snd_counter < 2 ** 8; snd_counter = snd_counter + 1) begin
-      snd_AXIL_araddr = 'd5;
-      read_axil(snd_AXIL_arvalid, snd_AXIL_arready, snd_AXIL_rvalid, snd_AXIL_rready);
-      snd_lsr = snd_AXIL_rdata[7:0];
+    snd_counter = 0;
+    while (snd_counter < 2 ** 8) begin
+      read_snd('d5, snd_lsr);
       if (snd_lsr & 8'h40) begin
-        snd_AXIL_awaddr = 'd0;
-        snd_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, snd_counter};
-        write_axil(snd_AXIL_awvalid, snd_AXIL_awready, snd_AXIL_wvalid, snd_AXIL_wready, snd_AXIL_bvalid, snd_AXIL_bready);
+        write_snd('d0, snd_counter);
+        snd_counter = snd_counter + 1;
       end
     end
   end
@@ -96,50 +74,37 @@ module myuart_tb;
   // Receive data
   reg [7:0] rcv_lcr = 0;
   reg [7:0] rcv_lsr = 0;
-  reg [7:0] rcv_counter = 0;
+  reg [7:0] rcv_data = 0;
+  reg [8:0] rcv_counter = 0;
   reg [7:0] rcv_error_counter = 0;
   initial begin
     @(reset_done);
     $display("TestBench started.");
     // initialize receiver UART
-    rcv_AXIL_araddr = 'd3;
-    read_axil(rcv_AXIL_arvalid, rcv_AXIL_arready, rcv_AXIL_rvalid, rcv_AXIL_rready);
-    rcv_lcr = rcv_AXIL_rdata[7:0];
-    rcv_AXIL_awaddr = 'd3;
-    rcv_AXIL_wdata = {{DATA_WIDTH - 8{1'b0}}, (rcv_lcr | 8'h80)};
-    write_axil(rcv_AXIL_awvalid, rcv_AXIL_awready, rcv_AXIL_wvalid, rcv_AXIL_wready, rcv_AXIL_bvalid, rcv_AXIL_bready);
-    rcv_AXIL_awaddr = 'd1;
-    rcv_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, div[15:8]};
-    write_axil(rcv_AXIL_awvalid, rcv_AXIL_awready, rcv_AXIL_wvalid, rcv_AXIL_wready, rcv_AXIL_bvalid, rcv_AXIL_bready);
-    rcv_AXIL_awaddr = 'd0;
-    rcv_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, div[7:0]};
-    write_axil(rcv_AXIL_awvalid, rcv_AXIL_awready, rcv_AXIL_wvalid, rcv_AXIL_wready, rcv_AXIL_bvalid, rcv_AXIL_bready);
-    rcv_AXIL_awaddr = 'd3;
-    rcv_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, rcv_lcr};
-    write_axil(rcv_AXIL_awvalid, rcv_AXIL_awready, rcv_AXIL_wvalid, rcv_AXIL_wready, rcv_AXIL_bvalid, rcv_AXIL_bready);
-    rcv_AXIL_awaddr = 'd2;
-    rcv_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, 8'hc0};
-    write_axil(rcv_AXIL_awvalid, rcv_AXIL_awready, rcv_AXIL_wvalid, rcv_AXIL_wready, rcv_AXIL_bvalid, rcv_AXIL_bready);
-    rcv_AXIL_awaddr = 'd1;
-    rcv_AXIL_wdata  = {{DATA_WIDTH - 8{1'b0}}, 8'h03};
-    write_axil(rcv_AXIL_awvalid, rcv_AXIL_awready, rcv_AXIL_wvalid, rcv_AXIL_wready, rcv_AXIL_bvalid, rcv_AXIL_bready);
+    // initialize sender UART
+    read_rcv('d3, rcv_lcr);
+    write_rcv('d3, (rcv_lcr | 8'h80));
+    write_rcv('d1, div[15:8]);
+    write_rcv('d0, div[7:0]);
+    write_rcv('d3, (rcv_lcr & 8'h7f));
+    write_rcv('d2, 8'hc0);
+    write_rcv('d1, 8'h03);
 
     // receive all possible bytes
-    for (rcv_counter = 0; rcv_counter < 2 ** 8; rcv_counter = rcv_counter + 1) begin
-      rcv_AXIL_araddr = 'd5;
-      read_axil(rcv_AXIL_arvalid, rcv_AXIL_arready, rcv_AXIL_rvalid, rcv_AXIL_rready);
-      rcv_lsr = rcv_AXIL_rdata[7:0];
+    rcv_counter = 0;
+    while (rcv_counter < 2 ** 8) begin
+      read_rcv('d5, rcv_lsr);
       if (rcv_lsr & 8'h01) begin
-        rcv_AXIL_awaddr = 'd0;
-        read_axil(rcv_AXIL_arvalid, rcv_AXIL_arready, rcv_AXIL_rvalid, rcv_AXIL_rready);
-        if (rcv_counter != rcv_AXIL_rdata[7:0]) begin
-          $display("Received data was not what expected: %x", rcv_AXIL_rdata[7:0]);
+        read_rcv('d0, rcv_data);
+        if (rcv_counter != rcv_data) begin
+          $display("Data received: %x; Expected: %x", rcv_data, rcv_counter);
           rcv_error_counter = rcv_error_counter + 1;
         end
+        rcv_counter = rcv_counter + 1;
       end
     end
 
-    if (~rcv_error_counter) $display("Test successful.");
+    if (!rcv_error_counter) $display("Test successful.");
     else $display("Test failled.");
     $finish();
   end
@@ -147,29 +112,59 @@ module myuart_tb;
   `include "instantiate_myuart_rcv.vs"  // clk_i=clk arst_i=rst cke_i=cke
   `include "instantiate_myuart_snd.vs"  // clk_i=clk arst_i=rst cke_i=cke
 
-  task automatic write_axil(output reg awvalid, input reg awready, output reg wvalid,
-                            input reg wready, input reg bvalid, output reg bready);
+  task automatic write_snd(input reg [ADDR_WIDTH-1:0] address, input reg [7:0] data);
     begin
-      awvalid = 1'b1;
-      wvalid  = 1'b1;
-      bready  = 1'b1;
+      snd_AXIL_awvalid = 1'b1;
+      snd_AXIL_awaddr  = address;
+      snd_AXIL_wvalid  = 1'b1;
+      snd_AXIL_wdata   = {{DATA_WIDTH - 8{1'b0}}, data};
+      snd_AXIL_bready  = 1'b1;
       @(posedge clk);
-      while (~awready & ~wready) @(posedge clk);
-      awvalid = 1'b0;
-      wvalid  = 1'b0;
-      while (~bvalid) @(posedge clk);
+      while (~snd_AXIL_awready & ~snd_AXIL_wready) @(posedge clk);
+      snd_AXIL_awvalid = 1'b0;
+      snd_AXIL_wvalid  = 1'b0;
+      while (~snd_AXIL_bvalid) @(posedge clk);
     end
   endtask
 
-  task automatic read_axil(output reg arvalid, input reg arready, input reg rvalid,
-                           output reg rready);
+  task automatic read_snd(input reg [ADDR_WIDTH-1:0] address, output reg [7:0] data);
     begin
-      arvalid = 1'b1;
-      rready  = 1'b1;
+      snd_AXIL_arvalid = 1'b1;
+      snd_AXIL_araddr  = address;
+      snd_AXIL_rready  = 1'b1;
       @(posedge clk);
-      while (~arready) @(posedge clk);
-      arvalid = 1'b0;
-      while (~rvalid) @(posedge clk);
+      while (~snd_AXIL_arready) @(posedge clk);
+      snd_AXIL_arvalid = 1'b0;
+      while (~snd_AXIL_rvalid) @(posedge clk);
+      data = snd_AXIL_rdata[7:0];
+    end
+  endtask
+
+  task automatic write_rcv(input reg [ADDR_WIDTH-1:0] address, input reg [7:0] data);
+    begin
+      rcv_AXIL_awvalid = 1'b1;
+      rcv_AXIL_awaddr  = address;
+      rcv_AXIL_wvalid  = 1'b1;
+      rcv_AXIL_wdata   = {{DATA_WIDTH - 8{1'b0}}, data};
+      rcv_AXIL_bready  = 1'b1;
+      @(posedge clk);
+      while (~rcv_AXIL_awready & ~rcv_AXIL_wready) @(posedge clk);
+      rcv_AXIL_awvalid = 1'b0;
+      rcv_AXIL_wvalid  = 1'b0;
+      while (~rcv_AXIL_bvalid) @(posedge clk);
+    end
+  endtask
+
+  task automatic read_rcv(input reg [ADDR_WIDTH-1:0] address, output reg [7:0] data);
+    begin
+      rcv_AXIL_arvalid = 1'b1;
+      rcv_AXIL_araddr  = address;
+      rcv_AXIL_rready  = 1'b1;
+      @(posedge clk);
+      while (~rcv_AXIL_arready) @(posedge clk);
+      rcv_AXIL_arvalid = 1'b0;
+      while (~rcv_AXIL_rvalid) @(posedge clk);
+      data = rcv_AXIL_rdata[7:0];
     end
   endtask
 endmodule
