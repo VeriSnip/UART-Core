@@ -74,6 +74,7 @@ module myuart_ecp5 (
     uut_AXIL_awaddr_n = uut_AXIL_awaddr;
     uut_AXIL_wvalid_n = 1'b0;
     uut_AXIL_wdata_n = uut_AXIL_wdata;
+    counter_n = 3'b000;
 
     if (initSequence_q) begin
       if (counter == NInitSequence) initSequence_n = 1'b1;
