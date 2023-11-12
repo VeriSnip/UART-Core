@@ -3,10 +3,10 @@
 build
 hardware/generated
 work
+IVerilog
 
 # Ignored files
 *.log
-*.out
 *.json
 transcript
 *.vcd
