@@ -5,14 +5,15 @@ UART testbench for ECP5 FPGA wrapper module
 
 module myuart_ecp5_tb;
 
-  parameter integer FREQ = 100e6;  //100 MHz
+  parameter integer FREQ = 25e6;  //25 MHz
   parameter integer BaudRate = 115200;  //high value to speed sim
   parameter integer CLKper = 1e9 / FREQ;
   parameter integer ADDR_WIDTH = 16;
   parameter integer DATA_WIDTH = 32;
 
   // Declare an event to signal the completion of the reset sequence
-  event reset_done;
+  event send_event;
+  event receive_event;
 
   // CORE SIGNALS
   reg rst = 0;
@@ -56,30 +57,19 @@ module myuart_ecp5_tb;
 `ifdef VCD
   initial begin
     $dumpfile("output.vcd");
-    $dumpvars(0, myuart_tb);
+    $dumpvars(0, myuart_ecp5_tb);
   end
 `endif
 
   // Reset sequence
   integer i;
+  reg [7:0] test_lcr = 0;
   initial begin
+    $display("TestBench started.");
     rst = 1'b1;
     for (i = 0; i < 10; i = i + 1) @(posedge clk);
     rst = 1'b0;
-    ->reset_done;
-  end
-
-  // Receive data
-  reg [7:0] test_lcr = 0;
-  reg [7:0] test_lsr = 0;
-  reg [7:0] test_data = 0;
-  reg [8:0] test_counter = 0;
-  reg [7:0] test_error_counter = 0;
-  initial begin
-    @(reset_done);
-    $display("TestBench started.");
-    // initialize receiver UART
-    // initialize sender UART
+    // initialize test UART
     read_uart('d3, test_lcr);
     write_uart('d3, (test_lcr | 8'h80));
     write_uart('d1, div[15:8]);
@@ -87,26 +77,46 @@ module myuart_ecp5_tb;
     write_uart('d3, (test_lcr & 8'h7f));
     write_uart('d2, 8'hc0);
     write_uart('d1, 8'h03);
+    ->send_event;
+  end
 
-    // receive all possible bytes
-    test_counter = 0;
-    while (test_counter < 2 ** 8) begin
-      read_uart('d5, test_lsr);
-      if (test_lsr & 8'h40) begin
-        write_uart('d0, test_counter);
-        test_counter = test_counter + 1;
-      end
-      if (test_lsr & 8'h01) begin
-        read_uart('d0, test_data);
-        if (test_counter != test_data) begin
-          $display("Data received: %x; Expected: %x", test_data, test_counter);
-          test_error_counter = test_error_counter + 1;
-        end
-        test_counter = test_counter + 1;
+  // Send data
+  reg [7:0] send_lsr = 0;
+  reg [8:0] send_counter = 0;
+  initial begin
+    // send all possible bytes
+    @(send_event);
+    while (send_counter < 2 ** 8) begin
+      read_uart('d5, send_lsr);
+      if (send_lsr & 8'h40) begin
+        write_uart('d0, send_counter);
+        send_counter = send_counter + 1;
+        ->receive_event;
+        @(send_event);
       end
     end
+  end
 
-    if (!test_error_counter) $display("Test successful.");
+  // Receive data
+  reg [7:0] receive_lsr = 0;
+  reg [7:0] receive_data = 0;
+  reg [8:0] receive_counter = 0;
+  reg [7:0] receive_error_counter = 0;
+  initial begin
+    @(receive_event);
+    while (receive_counter < 2 ** 8) begin
+      read_uart('d5, receive_lsr);
+      if (receive_lsr & 8'h01) begin
+        read_uart('d0, receive_data);
+        if (receive_counter != receive_data) begin
+          $display("Data received: %x; Expected: %x", receive_data, receive_counter);
+          receive_error_counter = receive_error_counter + 1;
+        end
+        receive_counter = receive_counter + 1;
+        ->send_event;
+      end
+    end
+    if (!receive_error_counter) $display("Test successful.");
     else $display("Test failled.");
     $finish();
   end

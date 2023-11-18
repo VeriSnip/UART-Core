@@ -26,8 +26,6 @@ module myuart_ecp5 (
   reg [1:0] state_n;
   reg [2:0] counter;
   reg [2:0] counter_n;
-  reg [DATA_WIDTH-1:0] storeData;
-  reg [DATA_WIDTH-1:0] storeData_n;
   reg uut_AXIL_awvalid_q;
   reg uut_AXIL_awvalid_n;
   reg [ADDR_WIDTH-1:0] uut_AXIL_awaddr_q;
@@ -44,7 +42,7 @@ module myuart_ecp5 (
   assign initSequenceData[0] = 32'h083;
   assign initSequenceData[1] = {{24{1'b0}}, div[15:8]};
   assign initSequenceData[2] = {{24{1'b0}}, div[7:0]};
-  assign initSequenceData[3] = 32'h7f;
+  assign initSequenceData[3] = 32'h03;
   assign initSequenceData[4] = 32'h0c0;
   assign initSequenceData[5] = 32'h03;
   assign initSequenceAddress[0] = 32'd3;
@@ -77,7 +75,7 @@ module myuart_ecp5 (
     counter_n = 3'b000;
 
     if (initSequence_q) begin
-      if (counter == NInitSequence) initSequence_n = 1'b1;
+      if (counter == NInitSequence) initSequence_n = 1'b0;
       else counter_n = counter + 1'b1;
       uut_AXIL_awvalid_n = 1'b1;
       uut_AXIL_awaddr_n  = initSequenceAddress[counter];
@@ -102,7 +100,6 @@ module myuart_ecp5 (
         end
         WriteReadyState: begin
           if (uut_AXIL_rvalid) begin
-            storeData_n = uut_AXIL_rdata;
             uut_AXIL_arvalid_n = 1'b1;
             uut_AXIL_araddr_n = 32'd5;
             state_n = WriteDataState;
@@ -117,8 +114,9 @@ module myuart_ecp5 (
               uut_AXIL_awvalid_n = 1'b1;
               uut_AXIL_awaddr_n = 32'd0;
               uut_AXIL_wvalid_n = 1'b1;
-              uut_AXIL_wdata_n = storeData;
               state_n = ReadReadyState;
+            end else begin
+              uut_AXIL_wdata_n = uut_AXIL_rdata;
             end
           end
         end
@@ -137,7 +135,6 @@ module myuart_ecp5 (
   uut_AXIL_arvalid_q, 1, 0, , , _n
   uut_AXIL_araddr_q, ADDR_WIDTH, 0, , , _n
   counter, 3, 0, , , _n
-  storeData, DATA_WIDTH, 0, , , _n
   */
 
   `include "instantiate_myuart_uut.vs"  // clk_i=clk_i arst_i=arst_i cke_i=cke rx_i=rx_i tx_o=tx_o
