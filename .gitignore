@@ -4,6 +4,7 @@ build
 hardware/generated
 work
 IVerilog
+ecp5
 
 # Ignored files
 *.log
