@@ -72,15 +72,19 @@ module myuart_ecp5 (
     uut_AXIL_awaddr_n = uut_AXIL_awaddr;
     uut_AXIL_wvalid_n = 1'b0;
     uut_AXIL_wdata_n = uut_AXIL_wdata;
+    uut_AXIL_arvalid_n = 1'b0;
+    uut_AXIL_araddr_n = uut_AXIL_araddr;
     counter_n = 3'b000;
 
     if (initSequence_q) begin
       if (counter == NInitSequence) initSequence_n = 1'b0;
-      else counter_n = counter + 1'b1;
-      uut_AXIL_awvalid_n = 1'b1;
-      uut_AXIL_awaddr_n  = initSequenceAddress[counter];
-      uut_AXIL_wvalid_n  = 1'b1;
-      uut_AXIL_wdata_n   = initSequenceData[counter];
+      else begin
+        counter_n = counter + 1'b1;
+        uut_AXIL_awvalid_n = 1'b1;
+        uut_AXIL_awaddr_n  = initSequenceAddress[counter];
+        uut_AXIL_wvalid_n  = 1'b1;
+        uut_AXIL_wdata_n   = initSequenceData[counter];
+      end
     end else begin
       case (state_q)
         ReadReadyState: begin
@@ -89,35 +93,29 @@ module myuart_ecp5 (
           state_n = ReadDataState;
         end
         ReadDataState: begin
-          if (uut_AXIL_rvalid) begin
-            uut_AXIL_arvalid_n = 1'b1;
-            uut_AXIL_araddr_n  = 32'd5;
-            if (uut_AXIL_rdata[0]) begin
-              uut_AXIL_araddr_n = 32'd0;
-              state_n = WriteReadyState;
-            end
+          uut_AXIL_arvalid_n = 1'b1;
+          uut_AXIL_araddr_n  = 32'd5;
+          if (uut_AXIL_rdata[0]) begin
+            uut_AXIL_araddr_n = 32'd0;
+            state_n = WriteReadyState;
           end
         end
         WriteReadyState: begin
-          if (uut_AXIL_rvalid) begin
-            uut_AXIL_arvalid_n = 1'b1;
-            uut_AXIL_araddr_n = 32'd5;
-            state_n = WriteDataState;
-          end
+          uut_AXIL_arvalid_n = 1'b1;
+          uut_AXIL_araddr_n = 32'd5;
+          state_n = WriteDataState;
         end
         WriteDataState: begin
-          if (uut_AXIL_rvalid) begin
-            uut_AXIL_arvalid_n = 1'b1;
-            uut_AXIL_araddr_n  = 32'd5;
-            if (uut_AXIL_rdata[6]) begin
-              uut_AXIL_arvalid_n = 1'b0;
-              uut_AXIL_awvalid_n = 1'b1;
-              uut_AXIL_awaddr_n = 32'd0;
-              uut_AXIL_wvalid_n = 1'b1;
-              state_n = ReadReadyState;
-            end else begin
-              uut_AXIL_wdata_n = uut_AXIL_rdata;
-            end
+          uut_AXIL_arvalid_n = 1'b1;
+          uut_AXIL_araddr_n  = 32'd5;
+          if (uut_AXIL_rdata[6]) begin
+            uut_AXIL_arvalid_n = 1'b0;
+            uut_AXIL_awvalid_n = 1'b1;
+            uut_AXIL_awaddr_n = 32'd0;
+            uut_AXIL_wvalid_n = 1'b1;
+            state_n = ReadReadyState;
+          end else begin
+            uut_AXIL_wdata_n = uut_AXIL_rdata;
           end
         end
         default;
