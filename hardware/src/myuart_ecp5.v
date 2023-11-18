@@ -103,7 +103,10 @@ module myuart_ecp5 (
         WriteReadyState: begin
           uut_AXIL_arvalid_n = 1'b1;
           uut_AXIL_araddr_n = 32'd5;
-          state_n = WriteDataState;
+          if(uut_AXIL_araddr != 32'd0) begin
+            uut_AXIL_wdata_n = uut_AXIL_rdata;
+            state_n = WriteDataState;
+          end
         end
         WriteDataState: begin
           uut_AXIL_arvalid_n = 1'b1;
@@ -114,8 +117,6 @@ module myuart_ecp5 (
             uut_AXIL_awaddr_n = 32'd0;
             uut_AXIL_wvalid_n = 1'b1;
             state_n = ReadReadyState;
-          end else begin
-            uut_AXIL_wdata_n = uut_AXIL_rdata;
           end
         end
         default;
