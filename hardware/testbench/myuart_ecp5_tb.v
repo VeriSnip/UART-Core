@@ -21,23 +21,23 @@ module myuart_ecp5_tb;
   wire cke;
   reg [15:0] div = FREQ / (16 * BaudRate);
 
-  reg  test_AXIL_awvalid;
+  reg test_AXIL_awvalid;
   wire test_AXIL_awready;
-  reg  [ADDR_WIDTH-1:0] test_AXIL_awaddr;
+  reg [ADDR_WIDTH-1:0] test_AXIL_awaddr;
   wire [2:0] test_AXIL_awprot;
-  reg  test_AXIL_wvalid;
+  reg test_AXIL_wvalid;
   wire test_AXIL_wready;
-  reg  [DATA_WIDTH-1:0] test_AXIL_wdata;
-  reg  [DATA_WIDTH/8-1:0] test_AXIL_wstrb;
+  reg [DATA_WIDTH-1:0] test_AXIL_wdata;
+  reg [DATA_WIDTH/8-1:0] test_AXIL_wstrb;
   wire test_AXIL_bvalid;
-  reg  test_AXIL_bready;
+  reg test_AXIL_bready;
   wire [1:0] test_AXIL_bresp;
-  reg  test_AXIL_arvalid;
+  reg test_AXIL_arvalid;
   wire test_AXIL_arready;
-  reg  [ADDR_WIDTH-1:0] test_AXIL_araddr;
+  reg [ADDR_WIDTH-1:0] test_AXIL_araddr;
   wire [2:0] test_AXIL_arprot;
   wire test_AXIL_rvalid;
-  reg  test_AXIL_rready;
+  reg test_AXIL_rready;
   wire [DATA_WIDTH-1:0] test_AXIL_rdata;
   wire [1:0] test_AXIL_rresp;
   wire test_rx;
@@ -65,7 +65,7 @@ module myuart_ecp5_tb;
   integer i;
   reg [7:0] test_lcr = 0;
   initial begin
-    $display("TestBench started.");
+    $display("TestBench: Started.");
     rst = 1'b1;
     for (i = 0; i < 10; i = i + 1) @(posedge clk);
     rst = 1'b0;
@@ -109,15 +109,16 @@ module myuart_ecp5_tb;
       if (receive_lsr & 8'h01) begin
         read_uart('d0, receive_data);
         if (receive_counter != receive_data) begin
-          $display("Data received: %x; Expected: %x", receive_data, receive_counter);
+          $display("TestBench: Byte received: %x; Expected: %x.", receive_data, receive_counter);
           receive_error_counter = receive_error_counter + 1;
         end
         receive_counter = receive_counter + 1;
         ->send_event;
       end
     end
-    if (!receive_error_counter) $display("Test successful.");
-    else $display("Test failled.");
+    if (!receive_error_counter)
+      $display("TestBench: Successfully sent and received Bytes from 0 to 255.");
+    else $display("TestBench: Failled to receive Bytes from 0 to 255.");
     $finish();
   end
 
