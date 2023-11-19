@@ -12,7 +12,7 @@ module myuart #(
     `include "io_clk_en_rst.vs",
     `include "axil_interface_slave_io.vs",
 
-    input  wire rx_i,  // Receiver input
+    input wire rx_i,  // Receiver input
     output wire tx_o,  // Transmitter output
     output wire interrupt_o  // interrupt/event output
 );
@@ -23,43 +23,46 @@ module myuart #(
 
   `include "generated_wires_myuart.vs"
 
-  wire [                    2:0] register_adr;
-  wire [                    1:0] trigger_level;
+  wire [2:0] register_adr;
+  wire [1:0] trigger_level;
 
   // receive buffer register, read only
-  wire [                    7:0] rx_data;
+  wire [7:0] rx_data;
   // parity error
-  wire                           parity_error;
-  wire [                    3:0] IIR_o;
-  reg  [                    3:0] clr_int;
+  wire parity_error;
+  wire [3:0] IIR_o;
+  reg [3:0] clr_int;
 
   // tx flow control
-  wire                           tx_ready;
+  wire tx_ready;
 
   // rx flow control
-  wire                           apb_rx_ready;
-  wire                           rx_valid;
+  wire apb_rx_ready;
+  wire rx_valid;
 
 
-  wire                           fifo_tx_valid;
-  wire                           tx_valid;
-  wire                           tx_fifo_clr;
-  wire [                    8:0] fifo_rx_data;
-  wire                           fifo_rx_valid;
-  wire                           fifo_rx_ready;
-  wire                           rx_ready;
-  wire                           rx_fifo_clr;
+  wire fifo_tx_valid;
+  wire tx_valid;
+  wire tx_fifo_clr;
+  wire [8:0] fifo_rx_data;
+  wire fifo_rx_valid;
+  wire fifo_rx_ready;
+  wire rx_ready;
+  wire rx_fifo_clr;
 
-  wire [                    7:0] tx_data;
+  wire [7:0] tx_data;
   wire [$clog2(TX_FIFO_DEPTH):0] tx_elements;
   wire [$clog2(RX_FIFO_DEPTH):0] rx_elements;
 
+  wire [15:0] cfg_div;
 
   assign trigger_level = ffc_reg_q[7:6];
   assign tx_fifo_clr   = ffc_reg_q[2];
   assign rx_fifo_clr   = ffc_reg_q[1];
   assign fifo_rx_ready = r_rbr_reg_sel & r_enable;
   assign fifo_tx_valid = w_thr_reg_sel & w_enable;
+
+  assign cfg_div = {dlm_reg_q, dll_reg_q} << 4;
 
   always @(*) begin
     clr_int = 4'b0;
@@ -97,7 +100,7 @@ module myuart #(
       .rstn_i         (~arst_i),
       .rx_i           (rx_i),
       .cfg_en_i       (1'b1),
-      .cfg_div_i      ({dlm_reg_q, dll_reg_q}),
+      .cfg_div_i      (cfg_div),
       .cfg_parity_en_i(lcr_reg_q[3]),
       .cfg_bits_i     (lcr_reg_q[1:0]),
       //.cfg_stop_bits_i(lcr_reg_q[2]),
@@ -115,7 +118,7 @@ module myuart #(
       .tx_o           (tx_o),
       .busy_o         (),
       .cfg_en_i       (1'b1),
-      .cfg_div_i      ({dlm_reg_q, dll_reg_q}),
+      .cfg_div_i      (cfg_div),
       .cfg_parity_en_i(lcr_reg_q[3]),
       .cfg_bits_i     (lcr_reg_q[1:0]),
       .cfg_stop_bits_i(lcr_reg_q[2]),
