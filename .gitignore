@@ -1,10 +1,9 @@
 # Ignored directories
 *__pycache__
-build
-hardware/generated
-work
-IVerilog
-ecp5
+*/
+!hardware/
+!hardware/src/
+!hardware/testbench/
 
 # Ignored files
 *.log

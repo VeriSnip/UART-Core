@@ -1,4 +1,4 @@
-module myuart_ecp5 (
+module myuart_fpga (
     // input hardware clock (25 MHz)
     input  wire clk_i,
     input  wire arst_i,
@@ -15,7 +15,7 @@ module myuart_ecp5 (
   localparam integer ReadReadyState = 0, ReadDataState = 1, WriteReadyState = 2, WriteDataState = 3;
   localparam integer InitializingState = 0, FeedBackState = 1;
 
-  `include "generated_wires_myuart_ecp5.vs"
+  `include "generated_wires_myuart_fpga.vs"
   wire cke;
   wire [DATA_WIDTH-1:0] initSequenceData[NInitSequence];
   wire [ADDR_WIDTH-1:0] initSequenceAddress[NInitSequence];
@@ -124,7 +124,7 @@ module myuart_ecp5 (
     end
   end
 
-  `include "reg_myuart_ecp5.vs"  /*
+  `include "reg_myuart_fpga.vs"  /*
   state_q, 2, 0, , , _n
   initSequence_q, 1, 1, , , _n
   uut_AXIL_awvalid_q, 1, 0, , , _n

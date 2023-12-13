@@ -1,9 +1,9 @@
 /*
-UART testbench for ECP5 FPGA wrapper module
+UART testbench for fpga FPGA wrapper module
 */
 `include "timescale.vs"
 
-module myuart_ecp5_tb;
+module myuart_fpga_tb;
 
   parameter integer FREQ = 25e6;  //25 MHz
   parameter integer BaudRate = 115200;  //high value to speed sim
@@ -57,7 +57,7 @@ module myuart_ecp5_tb;
 `ifdef VCD
   initial begin
     $dumpfile("output.vcd");
-    $dumpvars(0, myuart_ecp5_tb);
+    $dumpvars(0, myuart_fpga_tb);
   end
 `endif
 
@@ -123,7 +123,7 @@ module myuart_ecp5_tb;
   end
 
   `include "instantiate_myuart_test.vs"  // clk_i=clk arst_i=rst cke_i=cke
-  `include "instantiate_myuart_ecp5_uut.vs"  // clk_i=clk arst_i=rst cke_i=cke
+  `include "instantiate_myuart_fpga_uut.vs"  // clk_i=clk arst_i=rst cke_i=cke
 
   task automatic write_uart(input reg [ADDR_WIDTH-1:0] address, input reg [7:0] data);
     begin
