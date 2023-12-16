@@ -12,7 +12,7 @@ module myuart_fpga (
   localparam integer DATA_WIDTH = 32;
   localparam integer ADDR_WIDTH = 16;
   localparam integer NInitSequence = 6;
-  localparam integer ReadReadyState = 0, ReadDataState = 1, WriteReadyState = 2, WriteDataState = 3;
+  localparam reg [1:0] ReadReadyState = 0, ReadDataState = 1, WriteReadyState = 2, WriteDataState = 3;
   localparam integer InitializingState = 0, FeedBackState = 1;
 
   `include "generated_wires_myuart_fpga.vs"
@@ -45,12 +45,12 @@ module myuart_fpga (
   assign initSequenceData[3] = 32'h03;
   assign initSequenceData[4] = 32'h0c0;
   assign initSequenceData[5] = 32'h03;
-  assign initSequenceAddress[0] = 32'd3;
-  assign initSequenceAddress[1] = 32'd1;
-  assign initSequenceAddress[2] = 32'd0;
-  assign initSequenceAddress[3] = 32'd3;
-  assign initSequenceAddress[4] = 32'd2;
-  assign initSequenceAddress[5] = 32'd1;
+  assign initSequenceAddress[0] = 16'd3;
+  assign initSequenceAddress[1] = 16'd1;
+  assign initSequenceAddress[2] = 16'd0;
+  assign initSequenceAddress[3] = 16'd3;
+  assign initSequenceAddress[4] = 16'd2;
+  assign initSequenceAddress[5] = 16'd1;
 
   assign uut_AXIL_awvalid = uut_AXIL_awvalid_q;
   assign uut_AXIL_awaddr = uut_AXIL_awaddr_q;
@@ -89,32 +89,32 @@ module myuart_fpga (
       case (state_q)
         ReadReadyState: begin
           uut_AXIL_arvalid_n = 1'b1;
-          uut_AXIL_araddr_n = 32'd5;
+          uut_AXIL_araddr_n = 16'd5;
           state_n = ReadDataState;
         end
         ReadDataState: begin
           uut_AXIL_arvalid_n = 1'b1;
-          uut_AXIL_araddr_n  = 32'd5;
+          uut_AXIL_araddr_n  = 16'd5;
           if (uut_AXIL_rdata[0]) begin
-            uut_AXIL_araddr_n = 32'd0;
+            uut_AXIL_araddr_n = 16'd0;
             state_n = WriteReadyState;
           end
         end
         WriteReadyState: begin
           uut_AXIL_arvalid_n = 1'b1;
-          uut_AXIL_araddr_n = 32'd5;
-          if(uut_AXIL_araddr != 32'd0) begin
+          uut_AXIL_araddr_n = 16'd5;
+          if(uut_AXIL_araddr != 16'd0) begin
             uut_AXIL_wdata_n = uut_AXIL_rdata;
             state_n = WriteDataState;
           end
         end
         WriteDataState: begin
           uut_AXIL_arvalid_n = 1'b1;
-          uut_AXIL_araddr_n  = 32'd5;
+          uut_AXIL_araddr_n  = 16'd5;
           if (uut_AXIL_rdata[6]) begin
             uut_AXIL_arvalid_n = 1'b0;
             uut_AXIL_awvalid_n = 1'b1;
-            uut_AXIL_awaddr_n = 32'd0;
+            uut_AXIL_awaddr_n = 16'd0;
             uut_AXIL_wvalid_n = 1'b1;
             state_n = ReadReadyState;
           end
