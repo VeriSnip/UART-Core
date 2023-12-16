@@ -8,6 +8,8 @@
 # Ignored files
 *.log
 *.json
+*.qpf
+*.qsf
 transcript
 *.vcd
 *.wlf
