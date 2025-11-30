@@ -1,6 +1,8 @@
 # MyUART  
 This module implements the basic interface you would expect from a standard TI 16550 UART.
 
+You need to install [VeriSnip](https://pypi.org/project/VeriSnip/) to use this core.
+
 ## MMIO (Memory Mapped IO)
 The implemented memory-mapped I/O UART registers are accessible through the bus. These registers adhere to the UART-16550(A) standard, as outlined in [this Datasheet](http://caro.su/msx/ocm_de1/16550.pdf). Attempting to write to an unimplemented register will have no impact, while reading from such a register will consistently yield a value of 0x00. All registers have a width of 8 bits.
 

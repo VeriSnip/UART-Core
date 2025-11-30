@@ -1,5 +1,5 @@
-VTbuild_DIR ?= $(PWD)/../MyVT-Tool
-MyUtils_DIR ?= $(PWD)/../MyUtils-Tool
+MyUtils_DIR ?= $(PWD)/../Utils-Tool
+VSBUILD_ARGS := "--inc_dir=$(PWD)/../Open-Library"
 
 PROJECT_NAME ?= myuart
 
